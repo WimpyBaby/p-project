@@ -1,6 +1,7 @@
 """Code for practicing periodic system numbers, weight and symbol."""
 
 import random
+import sys
 
 
 class Element:
@@ -22,7 +23,7 @@ def get_letters_input(text):
     while True:
         try:
             user_input = input(text)
-            # if user_input.isalpha() hämtat från stackoverflow där isalpha() används för att kolla om en sträng endast innehåller bokstäver
+            # isalpha() hämtat från stackoverflow där isalpha() kollar om det är en bokstav
             if user_input.isalpha():
                 return user_input
             else:
@@ -36,7 +37,7 @@ def get_number_input(text):
     while True:
         try:
             user_input = input(text)
-            # if user_input.isdigit() hämtat från stackoverflow där isdigit() används för att kolla om en sträng endast innehåller siffror
+            # isdigit() hämtat från stackoverflow där isdigit() kollar om det är en siffra
             if user_input.isdigit():
                 return user_input
             else:
@@ -50,27 +51,28 @@ def element_list():
     with open("element.txt", "r", encoding="utf-8") as file:
         element_dict = {}
 
-        # Read file line by line
         for line in file:
-            # Split line into words
             data = line.strip().split()
 
-            # Ensure that there are three words on the line
             if len(data) == 3:
                 symbol = data[0]
                 weight = float(data[1])
                 number = int(data[2])
 
-                # Store symbol as key and a dictionary containing weight and number as value
-                element_dict[symbol] = {"weight": weight, "number": number}
+                # Store symbol as key with a dictionary containing weight and number as value
+                element_dict[symbol] = {
+                    "symbol": symbol,
+                    "weight": weight,
+                    "number": number,
+                }
 
         # Sort elements based on their weight
-        sorted_element_data = sorted(element_dict.items(), key=lambda x: x[1]["weight"])
+        sorted_elements_data = sorted(element_dict.values(), key=lambda x: x["weight"])
 
         # Create instances of Element class and add them to a list
         elements = [
-            Element(data[0], data[1]["weight"], data[1]["number"])
-            for data in sorted_element_data
+            Element(data["symbol"], data["weight"], data["number"])
+            for data in sorted_elements_data
         ]
 
         return elements
@@ -96,15 +98,18 @@ def practice_element_number():
     total_attempt = 0
 
     # Generate a random symbol
-    random_symbol = random.choice(list(element_dict.keys()))
+    random_element = random.choice(element_list)
+    print(f"\n{random_element.symbol} {random_element.weight} {random_element.number}")
 
     while True:
         # Generate a random symbol
 
         # Ask user for input
-        guess = get_number_input(f"Which atomic number does {random_symbol} have? ")
+        guess = get_number_input(
+            f"\nWhich atomic number does {random_element.symbol} have? "
+        )
 
-        if guess == element_dict[random_symbol]["number"]:
+        if guess == random_element.number:
             print("Correct!")
             break
 
@@ -113,7 +118,7 @@ def practice_element_number():
 
         if total_attempt == 3:
             print(
-                f"Sorry, the correct answer is {element_dict[random_symbol]['number']}"
+                f"\nSorry, the correct answer is {element_dict[random_element.symbol]['number']}"
             )
             break
 
@@ -124,16 +129,15 @@ def practice_element_symbol():
     attempt = 3
     total_attempt = 0
 
-    random_element = random.choice(list(element_dict.values()))
-    print("Random element:", random_element)
+    # Generate a random element
+    random_element = random.choice(element_list)
+    print(f"\n{random_element.symbol} {random_element.weight} {random_element.number}")
 
     while True:
         # Ask user for input
-        guess = get_letters_input(
-            f"Which symbol does {random_element['number']} have? "
-        )
+        guess = get_letters_input(f"\nWhich symbol does {random_element.number} have? ")
 
-        if guess.casefold() == random_element.get("symbol", "").casefold():
+        if guess.casefold() == random_element.symbol.casefold():
             print("Correct!")
             break
 
@@ -141,10 +145,7 @@ def practice_element_symbol():
         print(f"Wrong! You have {attempt - total_attempt} attempts left")
 
         if total_attempt == 3:
-            correct_symbol = random_element.get("symbol", "")
-            print(
-                f"Sorry, the correct answer is {correct_symbol if correct_symbol else 'unknown'}"
-            )
+            print(f"\nSorry, the correct answer is {random_element.symbol}")
             break
 
 
@@ -166,7 +167,7 @@ def displaymenu():
     elif user_input == "3":
         practice_element_symbol()
     elif user_input == "4":
-        exit()
+        sys.exit()
     else:
         print("Invalid input! Please enter a number between 1-4.")
 

@@ -1,15 +1,17 @@
 """Code for practicing periodic system numbers, weight and symbol."""
 
 from dataclasses import dataclass
+from enum import Enum
 import random
 import sys
 import tkinter as tk
 import error_handling as eh
 
 
+# Dataclass for elements in the periodic table
 @dataclass
 class Element:
-    """A class representing an element."""
+    """A class for elements in the periodic table."""
 
     symbol: str
     weight: float
@@ -28,59 +30,84 @@ class PeriodicTableReader:
     def __init__(self, file_path):
         self.file_path = file_path
         self.element_dict = self._create_element_dict()
+        self.sorted_element_dict = self._sorted_element_dict()
 
-    def __str__(self):
-        """Return a string representation of the PeriodicTableReader."""
-        return f"{self.file_path} {self.element_dict}"
-
+    # create a dictionary of elements from the file
     def _create_element_dict(self):
         element_dict = {}
         with open(self.file_path, "r", encoding="utf-8") as file:
             for line in file:
                 data = line.strip().split()
 
+                # Instances of Element class are created and added to element_dict
                 if len(data) == 5:
                     symbol, weight, number, row, column = data
-                    element_dict[symbol] = {
-                        "weight": float(weight),
-                        "number": int(number),
-                        "row": int(row),
-                        "column": int(column),
-                    }
+                    element = Element(
+                        symbol, float(weight), int(number), int(row), int(column)
+                    )
+                    element_dict[symbol] = element
         return element_dict
+
+    def _sorted_element_dict(self):
+        """Return a sorted element dictionary."""
+        # Sort the element dictionary by weight
+        return sorted(self.element_dict.values(), key=lambda elem: elem.weight)
 
     def show_element(self):
         """function for showing elements in a dictionary"""
         print(
             "\nSymbol         Weight          Number          Row             Column\n"
         )
-        for symbol, data in self.element_dict.items():
+        # Print the sorted element dictionary
+        for element in self._sorted_element_dict():
             print(
-                f"{symbol:<15} {data['weight']:<15} {data['number']:<15} {data['row']:<15} {data['column']:<15}"
+                f"{element.symbol:<15} {element.weight:<15} {element.number:<15} {element.row:<15} {element.column:<15}"
             )
 
 
 class PracticePeriodicTable:
     """A class for practicing periodic table."""
 
+    # Max attempt for each practice type
+    MAX_ATTEMPT = 3
+
     def __init__(self, element_dict):
         self.element_dict = element_dict
+        self.total_attempt = 0
+
+    def get_max_attempt(self):
+        """Return max attempt."""
+        # Return max attempt
+        return self.MAX_ATTEMPT
+
+    def get_total_attempt(self):
+        """Return total attempt."""
+        # Return total attempt
+        return self.total_attempt
+
+    def increment_total_attempt(self):
+        """Increment total attempt by 1."""
+        # Increment total attempt by 1 each time the user guesses wrong
+        self.total_attempt += 1
+
+    def generate_random_symbol(self):
+        """Generate a random symbol."""
+        # Return a random symbol from element_dict
+        return random.choice(list(self.element_dict.keys()))
 
     def practice_element_number(self):
         """Practice periodic system numbers."""
 
-        attempt = 3
-        total_attempt = 0
-
-        # Generate a random symbol
-        generated_symbol = random.choice(list(self.element_dict.keys()))
-        generated_number = self.element_dict[generated_symbol]["number"]
+        # Generate a random symbol and retrieve the number from element_dict
+        generated_symbol = self.generate_random_symbol()
+        generated_number = self.element_dict[generated_symbol].number
 
         # Debugging print statements
         print(
-            f"\n{generated_symbol} {self.element_dict[generated_symbol]['weight']} {generated_number}"
+            f"\n{generated_symbol} {self.element_dict[generated_symbol].weight} {generated_number}"
         )
 
+        # Asking the user to input their guess
         while True:
             # Ask user for input
             guess = eh.get_number_input(
@@ -88,39 +115,41 @@ class PracticePeriodicTable:
             )
 
             # Check if guess is equal to generated_number
-            if int(guess) == self.element_dict[generated_symbol]["number"]:
+            if int(guess) == self.element_dict[generated_symbol].number:
                 print("Correct!")
                 break
 
-            total_attempt += 1
-            print(f"Wrong! you have {attempt - total_attempt} attempts left")
+            # If guess is incorrect increment total_attempt by 1
+            self.increment_total_attempt()
 
-            if total_attempt == 3:
+            print(
+                f"Wrong! you have {self.get_max_attempt() - self.get_total_attempt()} attempts left"
+            )
+
+            # If total_attempt is equal to 3 print the correct answer and reset total_attempt to 0
+            if self.get_total_attempt() == self.get_max_attempt():
                 print(
-                    f"\nSorry, the correct answer is {self.element_dict[generated_symbol]['number']}"
+                    f"\nThe correct answer is {self.element_dict[generated_symbol].number}"
                 )
+                self.total_attempt = 0
                 break
 
     def practice_element_symbol(self):
         """Practice periodic system symbols."""
 
-        # Set attempt and total_attempt to 0
-        attempt = 3
-        total_attempt = 0
-
         # Generate a random symbol and element from element_dict
-        generated_symbol = random.choice(list(self.element_dict.keys()))
+        generated_symbol = self.generate_random_symbol()
         generated_element = self.element_dict[generated_symbol]
 
         # Debugging print statements
         print(
-            f"\n{generated_symbol} {generated_element['weight']} {generated_element['number']}"
+            f"\n{generated_symbol} {generated_element.weight} {generated_element.number}"
         )
 
         while True:
             # Ask user for input
             guess = eh.get_letters_input(
-                f"\nWhich symbol does {generated_element['number']} have? "
+                f"\nWhich symbol does the atomic number {generated_element.number} have? "
             )
             # Check if guess is equal to generated_symbol
             if guess.casefold() == generated_symbol.casefold():
@@ -128,37 +157,41 @@ class PracticePeriodicTable:
                 break
 
             # If guess is not equal to generated_symbol
-            total_attempt += 1
-            print(f"Wrong! You have {attempt - total_attempt} attempts left")
+            self.increment_total_attempt()
+            print(
+                f"Wrong! You have {self.get_max_attempt() - self.get_total_attempt()} attempts left"
+            )
 
             # If total_attempt is equal to 3
-            if total_attempt == 3:
+            if self.get_total_attempt() == self.get_max_attempt():
                 print(f"\nSorry, the correct answer is {generated_symbol}")
+                self.total_attempt = 0
                 break
 
     def practice_element_weight(self):
         """Practice periodic system weights."""
-        # Extracting a random element from element_dict as the correct weight
-        generated_symbol = random.choice(list(self.element_dict.keys()))
-        generated_weight = self.element_dict[generated_symbol]["weight"]
+
+        # Generate a random symbol and weight from element_dict
+        generated_symbol = self.generate_random_symbol()
+        generated_weight = self.element_dict[generated_symbol].weight
 
         # Extracting random elements from element_dict as alternatives
         random_symbols = random.sample(list(self.element_dict.keys()), 2)
         random_weights = [
-            self.element_dict[symbol]["weight"] for symbol in random_symbols
+            self.element_dict[symbol].weight for symbol in random_symbols
         ] + [generated_weight]
 
-        # Shuffling the order of the weights
+        # Shuffle the list of random_weights
         random.shuffle(random_weights)
 
         # Debugging print statements
         print(
-            f"Generated symbol: {generated_symbol} {self.element_dict[generated_symbol]['weight']}\n"
+            f"Generated symbol: {generated_symbol} {self.element_dict[generated_symbol].weight}\n"
         )
 
         # Printing the shuffled weights
         print(
-            f"What is the correct weight for {generated_symbol}?: \n{random_weights}\n"
+            f"What is the correct weight for the element {generated_symbol}?: \n{random_weights}\n"
         )
 
         # Asking the user to input their choice
@@ -167,7 +200,9 @@ class PracticePeriodicTable:
                 ("Which weight do you think is correct? Enter the weight: ")
             )
 
+            # Check if choice is in weights list
             if user_choice in random_weights:
+                # Check if choice is equal to weights and print correct or wrong
                 if user_choice == generated_weight:
                     print("\nCorrect!\n")
                     break
@@ -231,25 +266,37 @@ def create_periodic_table(root, element_dict):
             button.config(bg="red")
             wrong_buttons.append(button)
 
+    # loop through element_dict and create buttons for each element
     for symbol, data in element_dict.items():
-        row, col = data["row"], data["column"]
+        # placed symbols are added to placed_symbols
+        row, col = data.row, data.column
 
+        # if the symbol is placed, the button is disabled
         button = tk.Button(
-            root, text=data["number"], borderwidth=1, relief="solid", width=5, height=2
+            root, text=data.number, borderwidth=1, relief="solid", width=5, height=2
         )
+
+        # Create a button for each element in the shape of the periodic table
         button.grid(row=row, column=col, padx=2, pady=2)
         button.config(command=lambda r=row, c=col: print_row_col(r, c))
 
+    # new generated symbol is used as label
     symbol_label.config(text=f"Find: {generated_symbol}")
 
 
-ELEMENTS_DATA = "element.txt"
-reader = PeriodicTableReader(ELEMENTS_DATA)
+class MenuOption(Enum):
+    """Enum for practice type."""
 
-practice_table_instance = PracticePeriodicTable(reader.element_dict)
+    # Enum for menu options
+    SHOW_ELEMENTS = 1
+    PRACTICE_ELEMENT_NUMBER = 2
+    PRACTICE_ELEMENT_SYMBOL = 3
+    PRACTICE_ELEMENT_WEIGHT = 4
+    PRACTICE_PERIODIC_TABLE = 5
+    EXIT = 6
 
 
-def displaymenu(element_dict):
+def displaymenu(reader, practice_table_instance):
     """Menu for periodic system."""
     print("\n---------------MENU---------------")
     print("Welcome to the periodic system!\n")
@@ -260,34 +307,48 @@ def displaymenu(element_dict):
     print("5. Practice periodic table")
     print("6. Exit")
     print("----------------------------------")
-    user_input = eh.get_number_input("Please enter your choice: ")
 
-    if user_input == "1":
+    # Asking the user to input their choice
+    while True:
+        user_input = eh.get_number_input("Please enter your choice: ")
+
+        # Check if user_input is a valid menu option and break the loop if it is
+        try:
+            menu_option = MenuOption(int(user_input))
+            break
+        except ValueError:
+            print("Invalid input! Please enter a valid choice.")
+
+    # Check which menu option the user chose and call the corresponding function
+    if menu_option == MenuOption.SHOW_ELEMENTS:
         reader.show_element()
-    elif user_input == "2":
+    elif menu_option == MenuOption.PRACTICE_ELEMENT_NUMBER:
         practice_table_instance.practice_element_number()
-    elif user_input == "3":
+    elif menu_option == MenuOption.PRACTICE_ELEMENT_SYMBOL:
         practice_table_instance.practice_element_symbol()
-    elif user_input == "4":
+    elif menu_option == MenuOption.PRACTICE_ELEMENT_WEIGHT:
         practice_table_instance.practice_element_weight()
-    elif user_input == "5":
+    elif menu_option == MenuOption.PRACTICE_PERIODIC_TABLE:
         root = tk.Tk()
         root.title("Periodic Table")
-        create_periodic_table(root, element_dict)
+        create_periodic_table(root, reader.element_dict)
         root.mainloop()
-    elif user_input == "6":
+    elif menu_option == MenuOption.EXIT:
         sys.exit()
-    else:
-        print("Invalid input! Please enter a number between 1-5.")
 
 
-def main(element_dict):
+def main():
     """Main function to run the periodic system."""
 
+    # Create an instance of PeriodicTableReader and PracticePeriodicTable classes
+    elements_data = "element.txt"
+    reader = PeriodicTableReader(elements_data)
+    practice_table_instance = PracticePeriodicTable(reader.element_dict)
+
     while True:
-        displaymenu(element_dict)
+        displaymenu(reader, practice_table_instance)
 
 
 # Main program starts here with instance of PeriodicTableReader
 if __name__ == "__main__":
-    main(reader.element_dict)
+    main()
